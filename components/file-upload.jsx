@@ -6,17 +6,29 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Upload, FileText, Loader2, AlertCircle } from "lucide-react"
+import { Upload, FileText, Loader2, AlertCircle, Files } from "lucide-react"
 
-export function FileUpload({ processing, progress, fileName, error, onFileSelect }) {
+export function FileUpload({ processing, progress, fileName, error, onFileSelect, onBatchSelect }) {
   const [isDragging, setIsDragging] = useState(false)
 
   const handleFileChange = (event) => {
-    const file = event.target.files?.[0]
-    if (file && file.type === "application/pdf") {
-      onFileSelect(file)
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    if (files.length > 1) {
+      const pdfFiles = Array.from(files).filter((file) => file.type === "application/pdf")
+      if (pdfFiles.length > 0) {
+        onBatchSelect?.(pdfFiles)
+      } else {
+        onFileSelect(null, "Please upload valid PDF files")
+      }
     } else {
-      onFileSelect(null, "Please upload a valid PDF file")
+      const file = files[0]
+      if (file && file.type === "application/pdf") {
+        onFileSelect(file)
+      } else {
+        onFileSelect(null, "Please upload a valid PDF file")
+      }
     }
   }
 
@@ -34,11 +46,23 @@ export function FileUpload({ processing, progress, fileName, error, onFileSelect
     event.preventDefault()
     setIsDragging(false)
 
-    const file = event.dataTransfer.files[0]
-    if (file && file.type === "application/pdf") {
-      onFileSelect(file)
+    const files = event.dataTransfer.files
+    if (!files || files.length === 0) return
+
+    if (files.length > 1) {
+      const pdfFiles = Array.from(files).filter((file) => file.type === "application/pdf")
+      if (pdfFiles.length > 0) {
+        onBatchSelect?.(pdfFiles)
+      } else {
+        onFileSelect(null, "Please upload valid PDF files")
+      }
     } else {
-      onFileSelect(null, "Please upload a valid PDF file")
+      const file = files[0]
+      if (file && file.type === "application/pdf") {
+        onFileSelect(file)
+      } else {
+        onFileSelect(null, "Please upload a valid PDF file")
+      }
     }
   }
 
@@ -68,28 +92,48 @@ export function FileUpload({ processing, progress, fileName, error, onFileSelect
               Supports all major banks with enhanced OCR for accurate extraction
             </p>
 
-            <Button
-              disabled={processing}
-              size="lg"
-              className="gap-2 h-12 px-8"
-              onClick={() => document.getElementById("file-upload")?.click()}
-            >
-              {processing ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-5 w-5" />
-                  Choose PDF File
-                </>
-              )}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                disabled={processing}
+                size="lg"
+                className="gap-2 h-12 px-8"
+                onClick={() => document.getElementById("file-upload")?.click()}
+              >
+                {processing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-5 w-5" />
+                    Choose PDF File
+                  </>
+                )}
+              </Button>
+              <Button
+                disabled={processing}
+                size="lg"
+                variant="outline"
+                className="gap-2 h-12 px-8 bg-transparent"
+                onClick={() => document.getElementById("batch-upload")?.click()}
+              >
+                <Files className="h-5 w-5" />
+                Batch Upload
+              </Button>
+            </div>
             <input
               id="file-upload"
               type="file"
               accept="application/pdf"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <input
+              id="batch-upload"
+              type="file"
+              accept="application/pdf"
+              multiple
               onChange={handleFileChange}
               className="hidden"
             />

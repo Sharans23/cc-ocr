@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Upload, History, Sparkles, Building2 } from "lucide-react"
+import { Upload, History, Sparkles, Building2, FileSpreadsheet, XCircle, CheckCircle2 } from "lucide-react"
 import { FileUpload } from "@/components/file-upload"
 import { ExtractedDataDisplay } from "@/components/extracted-data-display"
 import { RawOcrOutput } from "@/components/raw-ocr-output"
@@ -11,7 +11,9 @@ import { HistoryList } from "@/components/history-list"
 import { processPDF } from "@/lib/services/pdf-processor"
 import { extractDataFromText } from "@/lib/services/data-extractor"
 import { loadHistory, saveToHistory } from "@/lib/services/history-service"
-import { downloadJSON, downloadRawText } from "@/lib/utils/file-utils"
+import { downloadJSON, downloadRawText, downloadCSV, downloadBatchCSV } from "@/lib/utils/file-utils"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 function App() {
   const [processing, setProcessing] = useState(false)
@@ -22,6 +24,8 @@ function App() {
   const [fileName, setFileName] = useState("")
   const [history, setHistory] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [batchResults, setBatchResults] = useState([])
+  const [processingBatch, setProcessingBatch] = useState(false)
 
   useEffect(() => {
     loadHistoryData()
@@ -70,6 +74,54 @@ function App() {
     }
   }
 
+  const handleBatchSelect = async (files) => {
+    if (!files || files.length === 0) return
+
+    try {
+      setProcessingBatch(true)
+      setError("")
+      setBatchResults([])
+
+      const results = []
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        setFileName(`Processing ${i + 1}/${files.length}: ${file.name}`)
+        setProgress((i / files.length) * 100)
+
+        try {
+          const fullText = await processPDF(file, (p) => {
+            const overallProgress = ((i + p / 100) / files.length) * 100
+            setProgress(overallProgress)
+          })
+
+          const extractedInfo = extractDataFromText(fullText)
+          results.push({
+            fileName: file.name,
+            ...extractedInfo,
+          })
+
+          await saveToHistory(extractedInfo, fullText, file.name)
+        } catch (err) {
+          console.error(`Error processing ${file.name}:`, err)
+          results.push({
+            fileName: file.name,
+            error: err.message,
+          })
+        }
+      }
+
+      setBatchResults(results)
+      setProgress(100)
+      await loadHistoryData()
+    } catch (err) {
+      console.error("Error in batch processing:", err)
+      setError(`Error in batch processing: ${err.message}`)
+    } finally {
+      setProcessingBatch(false)
+    }
+  }
+
   const handleHistoryItemSelect = (item) => {
     setExtractedData({
       cardIssuer: item.card_issuer,
@@ -83,6 +135,10 @@ function App() {
     })
     setRawOcrText(item.raw_ocr_text)
     setFileName(item.file_name)
+  }
+
+  const handleDataUpdate = (updatedData) => {
+    setExtractedData(updatedData)
   }
 
   return (
@@ -135,12 +191,58 @@ function App() {
 
           <TabsContent value="extract" className="space-y-8">
             <FileUpload
-              processing={processing}
+              processing={processing || processingBatch}
               progress={progress}
               fileName={fileName}
               error={error}
               onFileSelect={handleFileSelect}
+              onBatchSelect={handleBatchSelect}
             />
+
+            {batchResults.length > 0 && (
+              <Card className="border-2">
+                <CardHeader className="border-b bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-2xl">Batch Processing Results</CardTitle>
+                      <CardDescription className="mt-1.5">
+                        Processed {batchResults.length} statement{batchResults.length > 1 ? "s" : ""}
+                      </CardDescription>
+                    </div>
+                    <Button
+                      onClick={() => downloadBatchCSV(batchResults)}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                      Export All to CSV
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {batchResults.map((result, index) => (
+                      <div key={index} className="p-4 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold">{result.fileName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {result.error ? `Error: ${result.error}` : `${result.cardIssuer} - ${result.totalDue}`}
+                            </p>
+                          </div>
+                          {result.error ? (
+                            <XCircle className="h-5 w-5 text-destructive" />
+                          ) : (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {extractedData && (
               <div className="space-y-6">
@@ -149,6 +251,8 @@ function App() {
                   fileName={fileName}
                   onDownloadJSON={() => downloadJSON(extractedData, fileName)}
                   onDownloadRawText={() => downloadRawText(rawOcrText, fileName)}
+                  onDownloadCSV={() => downloadCSV(extractedData, fileName)}
+                  onDataUpdate={handleDataUpdate}
                 />
                 <RawOcrOutput text={rawOcrText} />
               </div>

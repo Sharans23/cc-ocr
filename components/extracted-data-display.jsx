@@ -1,7 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   User,
   Building2,
@@ -15,9 +17,23 @@ import {
   FileCode,
   CheckCircle2,
   XCircle,
+  FileSpreadsheet,
+  Edit2,
+  Save,
+  X,
 } from "lucide-react"
 
-export function ExtractedDataDisplay({ data, fileName, onDownloadJSON, onDownloadRawText }) {
+export function ExtractedDataDisplay({
+  data,
+  fileName,
+  onDownloadJSON,
+  onDownloadRawText,
+  onDownloadCSV,
+  onDataUpdate,
+}) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedData, setEditedData] = useState(data)
+
   const getStatusIcon = (value) => {
     return value === "Not Detected" ? (
       <XCircle className="h-4 w-4 text-destructive" />
@@ -26,7 +42,17 @@ export function ExtractedDataDisplay({ data, fileName, onDownloadJSON, onDownloa
     )
   }
 
-  const DataField = ({ icon: Icon, label, value, className = "" }) => (
+  const handleSave = () => {
+    onDataUpdate?.(editedData)
+    setIsEditing(false)
+  }
+
+  const handleCancel = () => {
+    setEditedData(data)
+    setIsEditing(false)
+  }
+
+  const DataField = ({ icon: Icon, label, value, fieldKey, className = "" }) => (
     <div
       className={`bg-muted/50 rounded-xl p-5 border border-border hover:border-primary/50 transition-colors ${className}`}
     >
@@ -37,7 +63,15 @@ export function ExtractedDataDisplay({ data, fileName, onDownloadJSON, onDownloa
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
         {getStatusIcon(value)}
       </div>
-      <p className="text-lg font-semibold">{value}</p>
+      {isEditing ? (
+        <Input
+          value={editedData[fieldKey] || ""}
+          onChange={(e) => setEditedData({ ...editedData, [fieldKey]: e.target.value })}
+          className="text-lg font-semibold"
+        />
+      ) : (
+        <p className="text-lg font-semibold">{value}</p>
+      )}
     </div>
   )
 
@@ -50,31 +84,59 @@ export function ExtractedDataDisplay({ data, fileName, onDownloadJSON, onDownloa
             <CardDescription className="mt-1.5">From: {fileName}</CardDescription>
           </div>
           <div className="flex gap-2">
-            <Button onClick={onDownloadJSON} variant="outline" size="sm" className="gap-2 bg-transparent">
-              <FileJson className="h-4 w-4" />
-              JSON
-            </Button>
-            <Button onClick={onDownloadRawText} variant="outline" size="sm" className="gap-2 bg-transparent">
-              <FileCode className="h-4 w-4" />
-              Raw Text
-            </Button>
+            {isEditing ? (
+              <>
+                <Button onClick={handleSave} size="sm" className="gap-2">
+                  <Save className="h-4 w-4" />
+                  Save
+                </Button>
+                <Button onClick={handleCancel} variant="outline" size="sm" className="gap-2 bg-transparent">
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={() => setIsEditing(true)} variant="outline" size="sm" className="gap-2 bg-transparent">
+                  <Edit2 className="h-4 w-4" />
+                  Edit
+                </Button>
+                <Button onClick={onDownloadCSV} variant="outline" size="sm" className="gap-2 bg-transparent">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  CSV
+                </Button>
+                <Button onClick={onDownloadJSON} variant="outline" size="sm" className="gap-2 bg-transparent">
+                  <FileJson className="h-4 w-4" />
+                  JSON
+                </Button>
+                <Button onClick={onDownloadRawText} variant="outline" size="sm" className="gap-2 bg-transparent">
+                  <FileCode className="h-4 w-4" />
+                  Raw Text
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </CardHeader>
       <CardContent className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <DataField icon={User} label="Customer Name" value={data.customerName} />
-          <DataField icon={Building2} label="Card Issuer" value={data.cardIssuer} />
-          <DataField icon={Hash} label="Card Last 4" value={`•••• ${data.cardLast4}`} />
-          <DataField icon={Calendar} label="Billing Cycle" value={data.billingCycle} />
-          <DataField icon={Clock} label="Payment Due" value={data.dueDate} />
+          <DataField icon={User} label="Customer Name" value={editedData.customerName} fieldKey="customerName" />
+          <DataField icon={Building2} label="Card Issuer" value={editedData.cardIssuer} fieldKey="cardIssuer" />
+          <DataField icon={Hash} label="Card Last 4" value={`•••• ${editedData.cardLast4}`} fieldKey="cardLast4" />
+          <DataField icon={Calendar} label="Billing Cycle" value={editedData.billingCycle} fieldKey="billingCycle" />
+          <DataField icon={Clock} label="Payment Due" value={editedData.dueDate} fieldKey="dueDate" />
 
-          {data.creditLimit !== "Not Detected" && (
-            <DataField icon={CreditCard} label="Credit Limit" value={data.creditLimit} />
+          {editedData.creditLimit !== "Not Detected" && (
+            <DataField icon={CreditCard} label="Credit Limit" value={editedData.creditLimit} fieldKey="creditLimit" />
           )}
 
-          {data.availableCredit !== "Not Detected" && (
-            <DataField icon={Wallet} label="Available Credit" value={data.availableCredit} />
+          {editedData.availableCredit !== "Not Detected" && (
+            <DataField
+              icon={Wallet}
+              label="Available Credit"
+              value={editedData.availableCredit}
+              fieldKey="availableCredit"
+            />
           )}
 
           <div className="md:col-span-2 lg:col-span-3 bg-primary/5 rounded-xl p-6 border-2 border-primary/20">
@@ -84,9 +146,17 @@ export function ExtractedDataDisplay({ data, fileName, onDownloadJSON, onDownloa
               </div>
               <div className="flex-1">
                 <span className="text-sm font-medium text-muted-foreground block mb-1">Total Amount Due</span>
-                <p className="text-3xl font-bold text-primary">{data.totalDue}</p>
+                {isEditing ? (
+                  <Input
+                    value={editedData.totalDue || ""}
+                    onChange={(e) => setEditedData({ ...editedData, totalDue: e.target.value })}
+                    className="text-3xl font-bold text-primary h-14"
+                  />
+                ) : (
+                  <p className="text-3xl font-bold text-primary">{editedData.totalDue}</p>
+                )}
               </div>
-              {getStatusIcon(data.totalDue)}
+              {getStatusIcon(editedData.totalDue)}
             </div>
           </div>
         </div>
