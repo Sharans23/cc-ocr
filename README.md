@@ -2,8 +2,6 @@
 
 A powerful web application that extracts financial data from credit card PDF statements using AI-powered OCR technology. Built with Next.js and OCR.space API for accurate data extraction from multiple bank formats.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/tps-projects-21726f9c/v0-extract-data-from-pdf)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/1w1cOVMlEEq)
 
 ## Features
 
@@ -20,7 +18,6 @@ A powerful web application that extracts financial data from credit card PDF sta
   - Credit limit
   - Available credit
 - **Multiple Export Formats**: Download extracted data as JSON, CSV, or raw text
-- **Real-time Progress**: Visual feedback during PDF processing
 - **Manual Editing**: Edit extracted data before exporting
 - **Dark Mode Support**: Built-in theme switching
 
@@ -89,32 +86,6 @@ npm run dev
 3. Wait for all files to be processed
 4. Review the batch results summary
 5. Export all results to a single CSV file
-
-## Project Structure
-
-\`\`\`
-cc-ocr/
-├── app/
-│   ├── layout.jsx          # Root layout with theme provider
-│   ├── page.jsx            # Main application page
-│   └── globals.css         # Global styles and Tailwind config
-├── components/
-│   ├── ui/                 # shadcn/ui components
-│   ├── extracted-data-display.jsx  # Display and edit extracted data
-│   ├── file-upload.jsx     # File upload with drag-and-drop
-│   └── raw-ocr-output.jsx  # Display raw OCR text
-├── lib/
-│   ├── constants/
-│   │   └── extraction-patterns.js  # Regex patterns for data extraction
-│   ├── services/
-│   │   ├── pdf-processor.js        # PDF to text conversion
-│   │   └── data-extractor.js       # Extract structured data from text
-│   └── utils/
-│       ├── file-utils.js           # Export utilities (JSON, CSV, text)
-│       ├── image-processing.js     # Image preprocessing for OCR
-│       └── text-processing.js      # Text cleaning and normalization
-└── public/                 # Static assets
-\`\`\`
 
 ## How It Works
 
