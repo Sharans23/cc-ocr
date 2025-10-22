@@ -45,7 +45,7 @@ A powerful web application that extracts financial data from credit card PDF sta
 
 1. Clone the repository:
 \`\`\`bash
-git clone https://github.com/yourusername/cc-ocr.git
+git clone https://github.com/Sharans23/cc-ocr.git
 cd cc-ocr
 \`\`\`
 
@@ -57,11 +57,10 @@ npm install
 3. Set up environment variables:
 Create a `.env.local` file in the root directory:
 \`\`\`env
-GROQ_API_KEY=your_groq_api_key_here
+API_KEY=your_api_key_here
 \`\`\`
 
 4. Configure OCR API:
-The OCR.space API key is currently hardcoded in `lib/services/pdf-processor.js`. Update it with your own key:
 \`\`\`javascript
 const API_KEY = 'your_ocr_space_api_key';
 \`\`\`
@@ -153,46 +152,7 @@ To get your own API key:
 3. Copy your API key
 4. Update the key in `lib/services/pdf-processor.js`
 
-## Development
-
-### Build for Production
-
-\`\`\`bash
-npm run build
-npm start
-\`\`\`
-
-### Linting
-
-\`\`\`bash
-npm run lint
-\`\`\`
-
-## Deployment
-
-This project is configured for deployment on Vercel:
-
-1. Push your code to GitHub
-2. Import the repository in Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy
-
-**Live Demo**: [https://vercel.com/tps-projects-21726f9c/v0-extract-data-from-pdf](https://vercel.com/tps-projects-21726f9c/v0-extract-data-from-pdf)
 
 ## Contributing
-
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
-
-This project is open source and available under the MIT License.
-
-## Acknowledgments
-
-- Built with [v0.app](https://v0.app) - AI-powered UI generation
-- OCR powered by [OCR.space](https://ocr.space)
-- UI components from [shadcn/ui](https://ui.shadcn.com)
-
-## Support
-
-For issues and questions, please open an issue on GitHub or contact the maintainers.
